@@ -1,45 +1,43 @@
-import time
-import json
 import os
+import json
 import discord
 import asyncio
-import re
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # GitHub Secrets에서 환경 변수 가져오기
-TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
-CHANNEL_ID = os.getenv("CHANNEL_ID")  # 디스코드 채널 ID
+TOKEN = os.getenv("DISCORD_TOKEN")
+CHANNEL_ID = os.getenv("CHANNEL_ID")
 
 if not TOKEN or not CHANNEL_ID:
     raise ValueError("🚨 환경 변수가 설정되지 않음! GitHub Secrets 확인 필요")
 
-CHANNEL_ID = int(CHANNEL_ID)  # 채널 ID를 정수로 변환
+CHANNEL_ID = int(CHANNEL_ID)
 
 DATA_FILE = "latest_posts.json"
 BASE_URL = "https://inno.hongik.ac.kr"
 TARGET_URL = f"{BASE_URL}/career/board/17"
-LAST_KNOWN_ID = 56  # ✅ 기준이 되는 마지막 게시글 번호 (57 이상이면 알림)
+LAST_KNOWN_ID = 56  
 
 # 실행 모드 설정
-TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
+TEST_MODE = True  
 
 # Selenium 설정
 chrome_options = Options()
 chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--remote-debugging-port=9222")  # 디버깅 활성화
-chrome_options.add_argument("--window-size=1920x1080")  # 전체 화면 크기 설정
+chrome_options.add_argument("--remote-debugging-port=9222")
+chrome_options.add_argument("--window-size=1920x1080")
 
-# webdriver-manager를 사용하여 ChromeDriver 자동 설치
-service = Service(ChromeDriverManager().install())
+# GitHub Actions에서 기본적으로 설치된 ChromeDriver 사용
+chrome_service = Service("/usr/bin/chromedriver")
 
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
@@ -72,7 +70,7 @@ async def check_new_posts():
     await send_debug_message("✅ 디스코드 채널 연결 성공")
 
     try:
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
         driver.get(TARGET_URL)
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.board-list tbody tr"))
