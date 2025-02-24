@@ -15,14 +15,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Chrome and ChromeDriver (GitHub 관리 버전 사용)
+      - name: Install Chrome
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-          echo "🚀 Installed Chrome Version: $CHROME_VERSION"
           sudo apt-get install -y chromium-chromedriver
-          echo "🚀 Installed ChromeDriver"
+          echo "🚀 Installed Chrome Version: $(google-chrome --version)"
+          echo "🚀 Installed ChromeDriver Version: $(chromedriver --version)"
 
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -31,7 +30,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4 discord.py selenium webdriver-manager
+          pip install requests beautifulsoup4 discord.py undetected-chromedriver selenium webdriver-manager
 
       - name: Run bot
         env:
