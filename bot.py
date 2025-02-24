@@ -119,21 +119,6 @@ async def check_new_posts():
 
     driver.quit()
 
-    # 🔹 TEST MODE ON: 가장 최신 글을 강제 전송
-    if TEST_MODE:
-        if new_posts:
-            test_post = max(new_posts, key=lambda x: x["id"])  # 가장 높은 ID 글 선택
-            message = f"🚨 [테스트 알림] 🚨\n**{test_post['title']}** (ID: {test_post['id']})\n🔗 {test_post['link']}"
-            await send_debug_message(message)
-            await send_debug_message("✅ 테스트 메시지 전송 완료!")
-        else:
-            await send_debug_message(f"🚨 테스트 모드 활성화, 그러나 새로운 게시글 없음 (최신 게시글 ID: {max_post_id})")
-
-        await client.close()
-        return
-
-    await send_debug_message("✅ 테스트 모드 OFF, 새 글 감지 시작")
-
     if not new_posts:
         await send_debug_message(f"🚨 기준 ID {LAST_KNOWN_ID} 이상인 새 글 없음! (최신 게시글 ID: {max_post_id})")
         await client.close()
@@ -143,7 +128,6 @@ async def check_new_posts():
         message = f"📢 새 글이 올라왔습니다!\n**{post['title']}** (ID: {post['id']})\n🔗 {post['link']}"
         await send_debug_message(message)
 
-    # 새로운 글을 저장
     with open(DATA_FILE, "w", encoding="utf-8") as file:
         json.dump(new_posts, file, indent=4, ensure_ascii=False)
 
