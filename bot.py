@@ -14,7 +14,6 @@ from selenium.webdriver.support import expected_conditions as EC
 TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
 CHANNEL_ID = os.getenv("CHANNEL_ID")  # 디스코드 채널 ID
 
-# 환경 변수 검증
 if not TOKEN or not CHANNEL_ID:
     raise ValueError("🚨 환경 변수가 설정되지 않음! GitHub Secrets 확인 필요")
 
@@ -30,12 +29,10 @@ TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
 
 # Selenium 설정
 chrome_options = Options()
-chrome_options.add_argument("--headless")  # 브라우저 창 없이 실행
+chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-
-# GitHub Actions에서 Chrome 실행 경로 설정
 chrome_options.binary_location = "/usr/bin/google-chrome"
 
 # 디스코드 클라이언트 설정
@@ -68,28 +65,23 @@ async def check_new_posts():
 
     await send_debug_message("✅ 디스코드 채널 연결 성공")
 
-    # Selenium을 사용하여 브라우저 열기
     try:
-        driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=chrome_options)
+        driver = webdriver.Chrome(options=chrome_options)
         driver.get(TARGET_URL)
-
-        # JavaScript 로딩을 기다림 (최대 10초)
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.board-list tbody tr"))
         )
-
     except Exception as e:
         await send_debug_message(f"🚨 Selenium 실행 오류 발생: {e}")
         driver.quit()
         await client.close()
         return
 
-    # 게시글 목록 가져오기
     articles = driver.find_elements(By.CSS_SELECTOR, "table.board-list tbody tr")
     await send_debug_message(f"✅ 크롤링 완료, {len(articles)}개의 글을 찾음")
 
     if not articles:
-        await send_debug_message(f"🚨 게시글을 찾을 수 없음! JavaScript 로딩 문제 가능성 있음")
+        await send_debug_message("🚨 게시글을 찾을 수 없음! JavaScript 로딩 문제 가능성 있음")
         driver.quit()
         await client.close()
         return
