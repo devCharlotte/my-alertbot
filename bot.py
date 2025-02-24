@@ -1,4 +1,3 @@
-
 import requests
 from bs4 import BeautifulSoup
 import discord
@@ -9,6 +8,7 @@ import os
 # GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  # 디스코드 채널 ID
+TEST_MODE = True  # 테스트 모드 활성화 (True로 변경하면 테스트 실행됨)
 
 DATA_FILE = "latest_posts.json"
 BASE_URL = "https://inno.hongik.ac.kr"
@@ -56,6 +56,15 @@ async def check_new_posts():
     saved_posts = load_saved_posts()
     latest_posts = get_latest_posts()
 
+    if TEST_MODE:
+        # 테스트 모드: 가장 마지막 글을 강제로 알림
+        if latest_posts:
+            test_post = latest_posts[0]  # 최신 글 1개 선택
+            message = f"🚨 [테스트 알림] 🚨\n**{test_post['title']}**\n🔗 {test_post['link']}"
+            await channel.send(message)
+        await client.close()
+        return
+
     if not saved_posts:
         save_posts(latest_posts)
         return
@@ -63,7 +72,7 @@ async def check_new_posts():
     new_entries = [post for post in latest_posts if post not in saved_posts]
 
     for post in new_entries:
-        message = f"📢 모집 공지 업로드!!!\n**{post['title']}**\n🔗 {post['link']}"
+        message = f"📢 준희야 새로운 공지 업로드 됐어!!!!!\n**{post['title']}**\n🔗 {post['link']}"
         await channel.send(message)
 
     if new_entries:
@@ -73,7 +82,5 @@ async def check_new_posts():
 async def on_ready():
     print(f"Logged in as {client.user}")
     await check_new_posts()
-    await client.close()  # 실행 후 종료
 
 client.run(TOKEN)
-
