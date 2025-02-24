@@ -15,10 +15,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Chrome
+      - name: Install Chrome and ChromeDriver (GitHub 관리 버전 사용)
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          echo "🚀 Installed Chrome Version: $CHROME_VERSION"
+          sudo apt-get install -y chromium-chromedriver
+          echo "🚀 Installed ChromeDriver"
 
       - name: Set up Python
         uses: actions/setup-python@v3
