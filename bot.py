@@ -35,6 +35,9 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 
+# GitHub Actions에서 Chrome 실행 경로 설정
+chrome_options.binary_location = "/usr/bin/google-chrome"
+
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -67,7 +70,7 @@ async def check_new_posts():
 
     # Selenium을 사용하여 브라우저 열기
     try:
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=chrome_options)
         driver.get(TARGET_URL)
 
         # JavaScript 로딩을 기다림 (최대 10초)
@@ -104,39 +107,4 @@ async def check_new_posts():
         if not title_tag:
             continue  # 제목 링크가 없으면 스킵
 
-        title = title_tag.text.strip()
-        link = BASE_URL + title_tag.get_attribute("href")
-
-        # ✅ 게시글 번호 확인 및 디버깅 메시지 전송
-        await send_debug_message(f"🔍 게시글 번호: {post_id}, 제목: {title}, 링크: {link}")
-
-        max_post_id = max(max_post_id, post_id)
-
-        # ✅ 기준 번호(56)보다 크면 알림 보냄
-        if post_id > LAST_KNOWN_ID:
-            new_posts.append({"id": post_id, "title": title, "link": link})
-            await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
-
-    driver.quit()
-
-    if not new_posts:
-        await send_debug_message(f"🚨 기준 ID {LAST_KNOWN_ID} 이상인 새 글 없음! (최신 게시글 ID: {max_post_id})")
-        await client.close()
-        return
-
-    for post in new_posts:
-        message = f"📢 새 글이 올라왔습니다!\n**{post['title']}** (ID: {post['id']})\n🔗 {post['link']}"
-        await send_debug_message(message)
-
-    with open(DATA_FILE, "w", encoding="utf-8") as file:
-        json.dump(new_posts, file, indent=4, ensure_ascii=False)
-
-    await send_debug_message("✅ 새 글 저장 완료")
-    await client.close()
-
-@client.event
-async def on_ready():
-    await send_debug_message(f"✅ 봇 로그인 완료: {client.user}")
-    await check_new_posts()
-
-client.run(TOKEN)
+        title
