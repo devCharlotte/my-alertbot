@@ -18,7 +18,10 @@ jobs:
       - name: Install Chrome and ChromeDriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable wget unzip
+          sudo apt-get install -y wget unzip curl
+          
+          # 최신 Chrome 설치
+          sudo apt-get install -y google-chrome-stable
           
           # 설치된 Chrome 버전 확인
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
@@ -26,7 +29,7 @@ jobs:
           
           # Chrome과 일치하는 ChromeDriver 버전 다운로드
           CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
-          wget https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
+          wget -q https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
