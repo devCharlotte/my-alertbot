@@ -30,7 +30,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests beautifulsoup4 discord.py undetected-chromedriver selenium webdriver-manager
+          pip install requests beautifulsoup4 discord.py selenium webdriver-manager
 
       - name: Run bot
         env:
