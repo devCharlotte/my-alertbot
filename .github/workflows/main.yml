@@ -1,0 +1,56 @@
+name: Run Discord Bot
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # 오전 11시 (한국 시간, UTC 기준 2시)
+    - cron: "0 3 * * *"   # 낮 12시 (한국 시간, UTC 기준 3시)
+    - cron: "0 4 * * *"   # 낮 1시 (한국 시간, UTC 기준 4시)
+    - cron: "0 5 * * *"   # 낮 2시 (한국 시간, UTC 기준 5시)
+  workflow_dispatch:  # 수동 실행 버튼 활성화
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Chrome and ChromeDriver (Fixed Versions)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip curl
+          
+          # Chrome 강제 설치
+          sudo apt-get install -y google-chrome-stable
+          
+          # Chrome 버전 확인
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          echo "🚀 Installed Chrome Version: $CHROME_VERSION"
+          
+          # ChromeDriver 다운로드 (Chrome 버전에 맞춰서)
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")
+          echo "🚀 Matching ChromeDriver Version: $CHROMEDRIVER_VERSION"
+          
+          wget -q "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip"
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+          
+          # 설치된 버전 확인
+          google-chrome --version
+          chromedriver --version
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 discord.py selenium
+
+      - name: Run bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+        run: python bot.py
