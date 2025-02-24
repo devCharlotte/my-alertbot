@@ -2,10 +2,7 @@ import os
 import json
 import discord
 import asyncio
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
+import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -26,18 +23,6 @@ LAST_KNOWN_ID = 56
 
 # 실행 모드 설정
 TEST_MODE = True  
-
-# Selenium 설정
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.add_argument("--remote-debugging-port=9222")
-chrome_options.add_argument("--window-size=1920x1080")
-
-# GitHub Actions에서 기본적으로 설치된 ChromeDriver 사용
-chrome_service = Service("/usr/bin/chromedriver")
 
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
@@ -70,7 +55,7 @@ async def check_new_posts():
     await send_debug_message("✅ 디스코드 채널 연결 성공")
 
     try:
-        driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+        driver = uc.Chrome(use_subprocess=True)
         driver.get(TARGET_URL)
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.board-list tbody tr"))
