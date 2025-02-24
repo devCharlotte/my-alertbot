@@ -1,3 +1,4 @@
+
 import requests
 from bs4 import BeautifulSoup
 import discord
@@ -5,7 +6,7 @@ import asyncio
 import json
 import os
 
-# GitHub Actions Secrets에서 환경 변수 가져오기
+# GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))  # 디스코드 채널 ID
 
@@ -75,3 +76,4 @@ async def on_ready():
     await client.close()  # 실행 후 종료
 
 client.run(TOKEN)
+
