@@ -35,7 +35,6 @@ async def send_debug_message(content):
     
     if channel:
         try:
-            # 메시지 길이가 2000자를 넘으면 나눠서 전송
             for i in range(0, len(content), 1900):
                 await channel.send(f"🛠️ [디버깅] {content[i:i+1900]}")
         except Exception as e:
@@ -68,31 +67,30 @@ async def check_new_posts():
     soup = BeautifulSoup(response.text, "html.parser")
 
     # 게시글 목록 가져오기
-    articles = soup.select("table.board-list tbody tr")
+    articles = soup.select("table.board-list tbody tr a")  # ✅ <a> 태그 직접 선택
     await send_debug_message(f"✅ 크롤링 완료, {len(articles)}개의 글을 찾음")
 
     new_posts = []
     max_post_id = LAST_KNOWN_ID
 
     for article in articles:
-        title_tag = article.select_one("a")
-        if title_tag:
-            title = title_tag.text.strip()
-            link = BASE_URL + title_tag["href"]
+        link = article.get("href", "")
+        title = article.text.strip()
 
-            # ✅ URL 디버깅 메시지 전송 (게시글 URL 확인)
-            await send_debug_message(f"🔍 게시글 링크: {link}")
+        # ✅ URL 디버깅 메시지 전송 (게시글 URL 확인)
+        await send_debug_message(f"🔍 게시글 링크: {link}")
 
-            # ✅ 게시글 번호 추출 (boardview/17/XX 형태에서 XX 추출)
-            match = re.search(r"/boardview/17/(\d+)", link)
-            if match:
-                post_id = int(match.group(1))
-                max_post_id = max(max_post_id, post_id)
+        # ✅ 게시글 번호 추출 (boardview/17/XX 형태에서 XX 추출)
+        match = re.search(r"/boardview/17/(\d+)", link)
+        if match:
+            post_id = int(match.group(1))
+            max_post_id = max(max_post_id, post_id)
 
-                # ✅ 기준 번호(56)보다 크면 알림 보냄
-                if post_id > LAST_KNOWN_ID:
-                    new_posts.append({"id": post_id, "title": title, "link": link})
-                    await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
+            # ✅ 기준 번호(56)보다 크면 알림 보냄
+            if post_id > LAST_KNOWN_ID:
+                full_link = BASE_URL + link
+                new_posts.append({"id": post_id, "title": title, "link": full_link})
+                await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
 
     # 🔹 TEST MODE ON: 가장 최신 글을 강제 전송
     if TEST_MODE:
