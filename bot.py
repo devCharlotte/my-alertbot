@@ -19,7 +19,7 @@ CHANNEL_ID = int(CHANNEL_ID)  # 채널 ID를 정수로 변환
 DATA_FILE = "latest_posts.json"
 BASE_URL = "https://inno.hongik.ac.kr"
 TARGET_URL = f"{BASE_URL}/career/board/17"
-LAST_KNOWN_ID = 57  # ✅ 기준이 되는 마지막 게시글 번호
+LAST_KNOWN_ID = 56  # ✅ 기준이 되는 마지막 게시글 번호
 
 # 실행 모드 설정
 TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
