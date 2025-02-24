@@ -19,7 +19,7 @@ CHANNEL_ID = int(CHANNEL_ID)  # 채널 ID를 정수로 변환
 DATA_FILE = "latest_posts.json"
 BASE_URL = "https://inno.hongik.ac.kr"
 TARGET_URL = f"{BASE_URL}/career/board/17"
-LAST_KNOWN_ID = 56  # ✅ 기준이 되는 마지막 게시글 번호
+LAST_KNOWN_ID = 56  # ✅ 기준이 되는 마지막 게시글 번호 (57 이상이면 알림)
 
 # 실행 모드 설정
 TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
@@ -80,15 +80,19 @@ async def check_new_posts():
             title = title_tag.text.strip()
             link = BASE_URL + title_tag["href"]
 
+            # ✅ URL 디버깅 메시지 전송 (게시글 URL 확인)
+            await send_debug_message(f"🔍 게시글 링크: {link}")
+
             # ✅ 게시글 번호 추출 (boardview/17/XX 형태에서 XX 추출)
             match = re.search(r"/boardview/17/(\d+)", link)
             if match:
                 post_id = int(match.group(1))
                 max_post_id = max(max_post_id, post_id)
 
-                # ✅ 기준 번호(57)보다 크면 알림 보냄
+                # ✅ 기준 번호(56)보다 크면 알림 보냄
                 if post_id > LAST_KNOWN_ID:
                     new_posts.append({"id": post_id, "title": title, "link": link})
+                    await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
 
     # 🔹 TEST MODE ON: 가장 최신 글을 강제 전송
     if TEST_MODE:
