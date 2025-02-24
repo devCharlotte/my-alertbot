@@ -107,4 +107,37 @@ async def check_new_posts():
         if not title_tag:
             continue  # 제목 링크가 없으면 스킵
 
-        title
+        title = title_tag.text.strip()
+        link = BASE_URL + title_tag.get_attribute("href")
+
+        await send_debug_message(f"🔍 게시글 번호: {post_id}, 제목: {title}, 링크: {link}")
+
+        max_post_id = max(max_post_id, post_id)
+
+        if post_id > LAST_KNOWN_ID:
+            new_posts.append({"id": post_id, "title": title, "link": link})
+            await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
+
+    driver.quit()
+
+    if not new_posts:
+        await send_debug_message(f"🚨 기준 ID {LAST_KNOWN_ID} 이상인 새 글 없음! (최신 게시글 ID: {max_post_id})")
+        await client.close()
+        return
+
+    for post in new_posts:
+        message = f"📢 새 글이 올라왔습니다!\n**{post['title']}** (ID: {post['id']})\n🔗 {post['link']}"
+        await send_debug_message(message)
+
+    with open(DATA_FILE, "w", encoding="utf-8") as file:
+        json.dump(new_posts, file, indent=4, ensure_ascii=False)
+
+    await send_debug_message("✅ 새 글 저장 완료")
+    await client.close()
+
+@client.event
+async def on_ready():
+    await send_debug_message(f"✅ 봇 로그인 완료: {client.user}")
+    await check_new_posts()
+
+client.run(TOKEN)
