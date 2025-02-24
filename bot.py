@@ -5,6 +5,7 @@ import discord
 import asyncio
 import re
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -34,6 +35,8 @@ chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.binary_location = "/usr/bin/google-chrome"
+
+service = Service("/usr/local/bin/chromedriver")
 
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
@@ -66,7 +69,7 @@ async def check_new_posts():
     await send_debug_message("✅ 디스코드 채널 연결 성공")
 
     try:
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.get(TARGET_URL)
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table.board-list tbody tr"))
