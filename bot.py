@@ -4,6 +4,7 @@ import discord
 import asyncio
 import json
 import os
+import re
 
 # GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
@@ -18,6 +19,7 @@ CHANNEL_ID = int(CHANNEL_ID)  # 채널 ID를 정수로 변환
 DATA_FILE = "latest_posts.json"
 BASE_URL = "https://inno.hongik.ac.kr"
 TARGET_URL = f"{BASE_URL}/career/board/17"
+LAST_KNOWN_ID = 57  # ✅ 기준이 되는 마지막 게시글 번호
 
 # 실행 모드 설정
 TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
@@ -65,53 +67,51 @@ async def check_new_posts():
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # 크롤링 대상 선택자
+    # 게시글 목록 가져오기
     articles = soup.select("table.board-list tbody tr")
     await send_debug_message(f"✅ 크롤링 완료, {len(articles)}개의 글을 찾음")
 
-    # 🔹 HTML 구조 확인을 위해 미리보기 출력 (테스트용)
-    if TEST_MODE:
-        await send_debug_message(f"🔍 HTML 미리보기: {soup.prettify()[:1900]}")
-
     new_posts = []
+    max_post_id = LAST_KNOWN_ID
+
     for article in articles:
         title_tag = article.select_one("a")
         if title_tag:
             title = title_tag.text.strip()
             link = BASE_URL + title_tag["href"]
-            new_posts.append({"title": title, "link": link})
 
-    # 🔹 TEST MODE ON: 최신 글 강제 전송 (새 글이 없어도 실행)
+            # ✅ 게시글 번호 추출 (boardview/17/XX 형태에서 XX 추출)
+            match = re.search(r"/boardview/17/(\d+)", link)
+            if match:
+                post_id = int(match.group(1))
+                max_post_id = max(max_post_id, post_id)
+
+                # ✅ 기준 번호(57)보다 크면 알림 보냄
+                if post_id > LAST_KNOWN_ID:
+                    new_posts.append({"id": post_id, "title": title, "link": link})
+
+    # 🔹 TEST MODE ON: 가장 최신 글을 강제 전송
     if TEST_MODE:
         if new_posts:
-            test_post = new_posts[0]  # 최신 글 1개 선택
-            message = f"🚨 [테스트 알림] 🚨\n**{test_post['title']}**\n🔗 {test_post['link']}"
+            test_post = max(new_posts, key=lambda x: x["id"])  # 가장 높은 ID 글 선택
+            message = f"🚨 [테스트 알림] 🚨\n**{test_post['title']}** (ID: {test_post['id']})\n🔗 {test_post['link']}"
             await send_debug_message(message)
             await send_debug_message("✅ 테스트 메시지 전송 완료!")
         else:
-            await send_debug_message("🚨 테스트 모드 활성화, 그러나 게시글이 없음")
+            await send_debug_message(f"🚨 테스트 모드 활성화, 그러나 새로운 게시글 없음 (최신 게시글 ID: {max_post_id})")
 
         await client.close()
         return
 
     await send_debug_message("✅ 테스트 모드 OFF, 새 글 감지 시작")
 
-    # 저장된 데이터 불러오기
-    try:
-        with open(DATA_FILE, "r", encoding="utf-8") as file:
-            saved_posts = json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        saved_posts = []
-
-    new_entries = [post for post in new_posts if post not in saved_posts]
-
-    if not new_entries:
-        await send_debug_message("🚨 새 글 없음! 알림 전송 안 함.")
+    if not new_posts:
+        await send_debug_message(f"🚨 기준 ID {LAST_KNOWN_ID} 이상인 새 글 없음! (최신 게시글 ID: {max_post_id})")
         await client.close()
         return
 
-    for post in new_entries:
-        message = f"📢 새 글이 올라왔습니다!\n**{post['title']}**\n🔗 {post['link']}"
+    for post in new_posts:
+        message = f"📢 새 글이 올라왔습니다!\n**{post['title']}** (ID: {post['id']})\n🔗 {post['link']}"
         await send_debug_message(message)
 
     # 새로운 글을 저장
