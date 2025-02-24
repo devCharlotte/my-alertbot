@@ -4,7 +4,6 @@ import discord
 import asyncio
 import json
 import os
-import re
 
 # GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
@@ -67,30 +66,44 @@ async def check_new_posts():
     soup = BeautifulSoup(response.text, "html.parser")
 
     # 게시글 목록 가져오기
-    articles = soup.select("table.board-list tbody tr a")  # ✅ <a> 태그 직접 선택
+    articles = soup.select("table.board-list tbody tr")  # ✅ 게시글 행(tr) 선택
     await send_debug_message(f"✅ 크롤링 완료, {len(articles)}개의 글을 찾음")
+
+    if not articles:
+        await send_debug_message(f"🚨 게시글을 찾을 수 없음! HTML 구조 확인 필요:\n{soup.prettify()[:1900]}")
+        await client.close()
+        return
 
     new_posts = []
     max_post_id = LAST_KNOWN_ID
 
     for article in articles:
-        link = article.get("href", "")
-        title = article.text.strip()
+        tds = article.find_all("td")  # ✅ <td> 요소들 가져오기
+        if len(tds) < 2:
+            continue  # 게시글 형식이 아니면 스킵
 
-        # ✅ URL 디버깅 메시지 전송 (게시글 URL 확인)
-        await send_debug_message(f"🔍 게시글 링크: {link}")
+        post_id = None
+        try:
+            post_id = int(tds[0].text.strip())  # ✅ 첫 번째 <td>에서 게시글 번호 추출
+        except ValueError:
+            continue
 
-        # ✅ 게시글 번호 추출 (boardview/17/XX 형태에서 XX 추출)
-        match = re.search(r"/boardview/17/(\d+)", link)
-        if match:
-            post_id = int(match.group(1))
-            max_post_id = max(max_post_id, post_id)
+        title_tag = article.find("a", href=True)
+        if not title_tag:
+            continue  # 제목 링크가 없으면 스킵
 
-            # ✅ 기준 번호(56)보다 크면 알림 보냄
-            if post_id > LAST_KNOWN_ID:
-                full_link = BASE_URL + link
-                new_posts.append({"id": post_id, "title": title, "link": full_link})
-                await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
+        title = title_tag.text.strip()
+        link = BASE_URL + title_tag["href"]
+
+        # ✅ 게시글 번호 확인 및 디버깅 메시지 전송
+        await send_debug_message(f"🔍 게시글 번호: {post_id}, 제목: {title}, 링크: {link}")
+
+        max_post_id = max(max_post_id, post_id)
+
+        # ✅ 기준 번호(56)보다 크면 알림 보냄
+        if post_id > LAST_KNOWN_ID:
+            new_posts.append({"id": post_id, "title": title, "link": link})
+            await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
 
     # 🔹 TEST MODE ON: 가장 최신 글을 강제 전송
     if TEST_MODE:
