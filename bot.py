@@ -1,9 +1,12 @@
-import requests
-from bs4 import BeautifulSoup
-import discord
-import asyncio
+import time
 import json
 import os
+import discord
+import asyncio
+import re
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 
 # GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")  # 디스코드 봇 토큰
@@ -22,6 +25,13 @@ LAST_KNOWN_ID = 56  # ✅ 기준이 되는 마지막 게시글 번호 (57 이상
 
 # 실행 모드 설정
 TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
+
+# Selenium 설정
+chrome_options = Options()
+chrome_options.add_argument("--headless")  # 브라우저 창 없이 실행
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
 
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
@@ -53,24 +63,18 @@ async def check_new_posts():
 
     await send_debug_message("✅ 디스코드 채널 연결 성공")
 
-    # 웹사이트 크롤링
-    try:
-        response = requests.get(TARGET_URL)
-        response.raise_for_status()
-        await send_debug_message("✅ 웹사이트 요청 성공")
-    except requests.RequestException as e:
-        await send_debug_message(f"🚨 크롤링 오류 발생: {e}")
-        await client.close()
-        return
-
-    soup = BeautifulSoup(response.text, "html.parser")
+    # Selenium을 사용하여 브라우저 열기
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get(TARGET_URL)
+    time.sleep(5)  # JavaScript 로딩 대기
 
     # 게시글 목록 가져오기
-    articles = soup.select("table.board-list tbody tr")  # ✅ 게시글 행(tr) 선택
+    articles = driver.find_elements(By.CSS_SELECTOR, "table.board-list tbody tr")
     await send_debug_message(f"✅ 크롤링 완료, {len(articles)}개의 글을 찾음")
 
     if not articles:
-        await send_debug_message(f"🚨 게시글을 찾을 수 없음! HTML 구조 확인 필요:\n{soup.prettify()[:1900]}")
+        await send_debug_message(f"🚨 게시글을 찾을 수 없음! 사이트가 JavaScript로 로드되는지 확인 필요")
+        driver.quit()
         await client.close()
         return
 
@@ -78,22 +82,17 @@ async def check_new_posts():
     max_post_id = LAST_KNOWN_ID
 
     for article in articles:
-        tds = article.find_all("td")  # ✅ <td> 요소들 가져오기
-        if len(tds) < 2:
-            continue  # 게시글 형식이 아니면 스킵
-
-        post_id = None
         try:
-            post_id = int(tds[0].text.strip())  # ✅ 첫 번째 <td>에서 게시글 번호 추출
+            post_id = int(article.find_element(By.TAG_NAME, "td").text.strip())  # ✅ 첫 번째 <td>에서 게시글 번호 추출
         except ValueError:
             continue
 
-        title_tag = article.find("a", href=True)
+        title_tag = article.find_element(By.TAG_NAME, "a")
         if not title_tag:
             continue  # 제목 링크가 없으면 스킵
 
         title = title_tag.text.strip()
-        link = BASE_URL + title_tag["href"]
+        link = BASE_URL + title_tag.get_attribute("href")
 
         # ✅ 게시글 번호 확인 및 디버깅 메시지 전송
         await send_debug_message(f"🔍 게시글 번호: {post_id}, 제목: {title}, 링크: {link}")
@@ -104,6 +103,8 @@ async def check_new_posts():
         if post_id > LAST_KNOWN_ID:
             new_posts.append({"id": post_id, "title": title, "link": link})
             await send_debug_message(f"🚨 새 게시글 발견! (ID: {post_id})")
+
+    driver.quit()
 
     # 🔹 TEST MODE ON: 가장 최신 글을 강제 전송
     if TEST_MODE:
