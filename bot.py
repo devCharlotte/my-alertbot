@@ -7,6 +7,7 @@ import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -34,9 +35,9 @@ chrome_options.add_argument("--headless")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
-chrome_options.binary_location = "/usr/bin/google-chrome"  # Chrome 실행 경로 강제 지정
 
-service = Service("/usr/local/bin/chromedriver")  # ChromeDriver 실행 경로 강제 지정
+# webdriver-manager를 사용하여 ChromeDriver 자동 설정
+service = Service(ChromeDriverManager().install())
 
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
