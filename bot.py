@@ -20,7 +20,7 @@ BASE_URL = "https://inno.hongik.ac.kr"
 TARGET_URL = f"{BASE_URL}/career/board/17"
 
 # 실행 모드 설정
-TEST_MODE = False  # True: 디버깅 및 테스트 실행 / False: 정상 실행
+TEST_MODE = True  # True: 디버깅 및 테스트 실행 / False: 정상 실행
 
 # 디스코드 클라이언트 설정
 intents = discord.Intents.default()
@@ -69,6 +69,10 @@ async def check_new_posts():
     articles = soup.select("table.board-list tbody tr")
     await send_debug_message(f"✅ 크롤링 완료, {len(articles)}개의 글을 찾음")
 
+    # 🔹 HTML 구조 확인을 위해 미리보기 출력 (테스트용)
+    if TEST_MODE:
+        await send_debug_message(f"🔍 HTML 미리보기: {soup.prettify()[:1900]}")
+
     new_posts = []
     for article in articles:
         title_tag = article.select_one("a")
@@ -77,19 +81,16 @@ async def check_new_posts():
             link = BASE_URL + title_tag["href"]
             new_posts.append({"title": title, "link": link})
 
-    if not new_posts:
-        await send_debug_message("🚨 새 글 없음!")
-        await client.close()
-        return
-
-    await send_debug_message(f"🔍 최신 글 제목: {new_posts[0]['title']}")
-
-    # 🔹 TEST MODE ON: 최신 글 강제 전송
+    # 🔹 TEST MODE ON: 최신 글 강제 전송 (새 글이 없어도 실행)
     if TEST_MODE:
-        test_post = new_posts[0]  # 최신 글 1개 선택
-        message = f"🚨 [테스트 알림] 🚨\n**{test_post['title']}**\n🔗 {test_post['link']}"
-        await send_debug_message(message)
-        await send_debug_message("✅ 테스트 메시지 전송 완료!")
+        if new_posts:
+            test_post = new_posts[0]  # 최신 글 1개 선택
+            message = f"🚨 [테스트 알림] 🚨\n**{test_post['title']}**\n🔗 {test_post['link']}"
+            await send_debug_message(message)
+            await send_debug_message("✅ 테스트 메시지 전송 완료!")
+        else:
+            await send_debug_message("🚨 테스트 모드 활성화, 그러나 게시글이 없음")
+
         await client.close()
         return
 
@@ -110,7 +111,7 @@ async def check_new_posts():
         return
 
     for post in new_entries:
-        message = f"📢 준희야 공지 올라왔어!!!\n**{post['title']}**\n🔗 {post['link']}"
+        message = f"📢 새 글이 올라왔습니다!\n**{post['title']}**\n🔗 {post['link']}"
         await send_debug_message(message)
 
     # 새로운 글을 저장
