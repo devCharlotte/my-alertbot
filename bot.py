@@ -94,13 +94,13 @@ async def check_new_posts():
 
     for article in articles:
         try:
-            post_id = int(article.find_element(By.TAG_NAME, "td").text.strip())  # ✅ 첫 번째 <td>에서 게시글 번호 추출
+            post_id = int(article.find_element(By.TAG_NAME, "td").text.strip())
         except ValueError:
             continue
 
         title_tag = article.find_element(By.TAG_NAME, "a")
         if not title_tag:
-            continue  # 제목 링크가 없으면 스킵
+            continue
 
         title = title_tag.text.strip()
         link = BASE_URL + title_tag.get_attribute("href")
