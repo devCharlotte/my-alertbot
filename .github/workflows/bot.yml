@@ -15,14 +15,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Chrome and ChromeDriver
+      - name: Install Chrome and ChromeDriver (Matching Versions)
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
-          wget -N https://chromedriver.storage.googleapis.com/$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE")/chromedriver_linux64.zip
+          
+          # 설치된 Chrome 버전 확인
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+          echo "Chrome Version: $CHROME_VERSION"
+          
+          # Chrome과 일치하는 ChromeDriver 버전 다운로드
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
+          wget https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
           sudo chmod +x /usr/local/bin/chromedriver
+          
+          # 설치된 버전 확인
           google-chrome --version
           chromedriver --version
 
