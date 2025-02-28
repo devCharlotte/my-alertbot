@@ -1,3 +1,9 @@
+bot.py(rev)
+
+
+
+
+oldbot.py 
 
 ![image](https://github.com/user-attachments/assets/49b4ec1a-84e2-4c10-8b39-01bea6d89eb4)
 
