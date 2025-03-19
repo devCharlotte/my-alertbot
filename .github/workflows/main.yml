@@ -2,27 +2,7 @@ name: Run Discord Bot
 
 on:
   schedule:
-    - cron: "0 23 * * *"   # 한국 시간 08:00 AM (KST)
-    - cron: "30 23 * * *"  # 한국 시간 08:30 AM (KST)
-    - cron: "50 23 * * *"  # 한국 시간 08:50 AM (KST)
-    - cron: "0 0 * * *"    # 한국 시간 09:00 AM (KST)
-    - cron: "30 0 * * *"   # 한국 시간 09:30 AM (KST)
-    - cron: "50 0 * * *"   # 한국 시간 09:50 AM (KST)
-    - cron: "0 1 * * *"    # 한국 시간 10:00 AM (KST)
-    - cron: "30 1 * * *"   # 한국 시간 10:30 AM (KST)
-    - cron: "50 1 * * *"   # 한국 시간 10:50 AM (KST)
-    - cron: "0 2 * * *"    # 한국 시간 11:00 AM (KST)
-    - cron: "30 2 * * *"   # 한국 시간 11:30 AM (KST)
-    - cron: "50 2 * * *"   # 한국 시간 11:50 AM (KST)
-    - cron: "0 3 * * *"    # 한국 시간 12:00 PM (KST)
-    - cron: "30 3 * * *"   # 한국 시간 12:30 PM (KST)
-    - cron: "50 3 * * *"   # 한국 시간 12:50 PM (KST)
-    - cron: "0 4 * * *"    # 한국 시간 1:00 PM (KST)
-    - cron: "30 4 * * *"   # 한국 시간 1:30 PM (KST)
-    - cron: "50 4 * * *"   # 한국 시간 1:50 PM (KST)
-    - cron: "0 5 * * *"    # 한국 시간 2:00 PM (KST)
-    - cron: "30 5 * * *"   # 한국 시간 2:30 PM (KST)
-    - cron: "50 5 * * *"   # 한국 시간 2:50 PM (KST)
+    - cron: "0 23 * * *"   # 한국 시간 08:00 AM (KST) - 하루 동안 실행 시작
   workflow_dispatch:
 
 jobs:
@@ -42,8 +22,8 @@ jobs:
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
-            echo "⚠️ requirements.txt 파일이 없습니다. discord.py를 직접 설치합니다."
-            pip install discord.py python-dotenv nest_asyncio
+            echo "⚠️ requirements.txt 파일이 없습니다. 필수 패키지를 직접 설치합니다."
+            pip install discord.py nest_asyncio
           
       - name: Run bot
         env:
