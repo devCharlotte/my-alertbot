@@ -2,10 +2,6 @@ import os
 import discord
 import asyncio
 from datetime import datetime
-import nest_asyncio
-
-# GitHub Actions 환경에서 비동기 실행 문제 해결
-nest_asyncio.apply()
 
 # GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -21,13 +17,9 @@ client = discord.Client(intents=intents)
 
 # 기본 알람 스케줄 (매시간 00분, 30분, 50분)
 ALARM_HOURS = range(8, 24)  # 08:00 ~ 23:59
-ALARM_MINUTES = {
-    0: "🔔 00시 00분!!",
-    30: "🕞 30분이야! 다시 집중해보자!",
-    50: "⏳ 50분! 이제 잠깐 쉬는 시간을 가져보자!"
-}
+ALARM_MINUTES = {0: "🔔 00시 00분!!", 30: "🕞 30분이야! 다시 집중해보자!", 50: "⏳ 50분! 이제 잠깐 쉬는 시간을 가져보자!"}
 
-# 특정 요일 특정 시간 알림 (자유롭게 추가/수정 가능)
+# 특정 요일 특정 시간 알림 (자유롭게 추가 가능)
 EXTRA_SCHEDULES = {
     "Monday": {10: "📢 월요일 오전 10시! 새로운 한 주가 시작됐어!"},
     "Wednesday": {15: "📢 수요일 오후 3시! 주중 절반 지났어! 힘내자!"},
