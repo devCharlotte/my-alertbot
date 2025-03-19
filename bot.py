@@ -24,14 +24,31 @@ ALARM_MINUTES = {0: "🔔 00시 00분!!", 30: "🕞 30분이야! 다시 집중�
 
 async def send_notification():
     await client.wait_until_ready()
+
+    # 🚀 채널 가져오기
     channel = client.get_channel(CHANNEL_ID)
 
-    # 🚨 채널이 정상적으로 가져와지는지 확인
+    # 🚨 채널이 None이면 서버의 모든 채널에서 직접 찾기
+    if channel is None:
+        print(f"🚨 client.get_channel({CHANNEL_ID})이 None을 반환했습니다. 서버에서 채널을 직접 검색합니다.")
+        for guild in client.guilds:
+            for ch in guild.text_channels:
+                if ch.id == CHANNEL_ID:
+                    channel = ch
+                    print(f"✅ 채널 찾음: {channel.name} (ID: {channel.id})")
+                    break
+
+    # 🚨 여전히 None이면 종료
     if channel is None:
         print(f"🚨 오류: 채널 ID {CHANNEL_ID}을 찾을 수 없음. 봇이 해당 채널에 접근할 수 있는지 확인하세요.")
         return
-    else:
-        print(f"✅ 채널 확인 완료: {channel.name} (ID: {channel.id})")
+
+    # 🚨 봇이 메시지를 보낼 수 있는 권한이 있는지 확인
+    if not channel.permissions_for(guild.me).send_messages:
+        print(f"🚨 오류: 봇이 채널 {channel.name}에서 메시지를 보낼 권한이 없습니다.")
+        return
+
+    print(f"✅ 채널 확인 완료: {channel.name} (ID: {channel.id})")
 
     # 🚀 첫 실행 시 테스트 메시지 전송
     test_message = "✅ 디스코드 봇이 정상적으로 실행되었습니다! 알림이 정상적으로 전송될 예정입니다."
