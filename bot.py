@@ -26,7 +26,7 @@ async def send_notification():
     await client.wait_until_ready()
     channel = client.get_channel(CHANNEL_ID)
 
-    # 🚨 디버깅: 채널이 정상적으로 가져와지는지 확인
+    # 🚨 채널이 정상적으로 가져와지는지 확인
     if channel is None:
         print(f"🚨 오류: 채널 ID {CHANNEL_ID}을 찾을 수 없음. 봇이 해당 채널에 접근할 수 있는지 확인하세요.")
         return
@@ -39,45 +39,45 @@ async def send_notification():
         await channel.send(test_message)
         print(f"✅ 테스트 메시지 전송 완료: {test_message}")
     except Exception as e:
-        print(f"🚨 메시지 전송 실패: {e}")
+        print(f"🚨 테스트 메시지 전송 실패: {e}")
         return
+
+    # 🚀 TEST_MODE 활성화 시 즉시 메시지 전송
+    if TEST_MODE:
+        test_mode_message = f"🛠 [테스트 모드] 즉시 메시지 전송됨\n🕒 현재 시각: {datetime.now().strftime('%H:%M')}"
+        try:
+            await channel.send(test_mode_message)
+            print(f"✅ 테스트 모드 알림 전송: {test_mode_message}")
+        except Exception as e:
+            print(f"🚨 테스트 모드 메시지 전송 실패: {e}")
+        return  # 테스트 모드에서는 즉시 종료
 
     print("✅ 알림 봇 실행 중... 하루 동안 지속 실행")
 
     while True:
         now = datetime.now()
-        if TEST_MODE:
-            message = f"🛠 [테스트 모드] 즉시 메시지 전송됨\n🕒 현재 시각: {now.strftime('%H:%M')}"
+        if now.hour in ALARM_HOURS and now.minute in ALARM_MINUTES:
+            message = f"{ALARM_MINUTES[now.minute]}\n🕒 현재 시각: {now.strftime('%H:%M')}"
             try:
                 await channel.send(message)
-                print(f"✅ 테스트 모드 알림 전송: {message}")
+                print(f"✅ 알림 전송: {message}")
             except Exception as e:
-                print(f"🚨 테스트 모드 메시지 전송 실패: {e}")
+                print(f"🚨 메시지 전송 실패: {e}")
 
-            await asyncio.sleep(60)  # 1분 대기 후 반복
-
-        else:
-            if now.hour in ALARM_HOURS and now.minute in ALARM_MINUTES:
-                message = f"{ALARM_MINUTES[now.minute]}\n🕒 현재 시각: {now.strftime('%H:%M')}"
-                try:
-                    await channel.send(message)
-                    print(f"✅ 알림 전송: {message}")
-                except Exception as e:
-                    print(f"🚨 메시지 전송 실패: {e}")
-
-            await asyncio.sleep(60)  # 1분 대기 후 다시 확인
+        await asyncio.sleep(60)  # 1분 대기 후 다시 확인
 
 @client.event
 async def on_ready():
     print(f"✅ 봇 로그인 완료: {client.user}")
     print("✅ 디스코드 서버에서 봇이 정상적으로 로그인됨. 채널을 확인합니다...")
 
-    # 🚨 디버깅: 봇이 속한 서버 정보 출력
+    # 🚨 봇이 속한 서버 및 채널 정보 출력
     for guild in client.guilds:
         print(f"📌 서버 이름: {guild.name} (ID: {guild.id})")
         for channel in guild.text_channels:
             print(f"📌 채널 이름: {channel.name} (ID: {channel.id})")
 
+    # 🚀 TEST_MODE에서 즉시 메시지 전송
     client.loop.create_task(send_notification())
 
 if __name__ == "__main__":
