@@ -2,7 +2,12 @@ import os
 import discord
 import asyncio
 from datetime import datetime
+import nest_asyncio
 
+# GitHub Actions 환경에서 비동기 실행 문제 해결
+nest_asyncio.apply()
+
+# GitHub Secrets에서 환경 변수 가져오기
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = os.getenv("CHANNEL_ID")
 
@@ -22,7 +27,7 @@ ALARM_MINUTES = {
     50: "⏳ 50분! 이제 잠깐 쉬는 시간을 가져보자!"
 }
 
-# 특정 요일 특정 시간 알림 추가
+# 특정 요일 특정 시간 알림 (자유롭게 추가/수정 가능)
 EXTRA_SCHEDULES = {
     "Monday": {10: "📢 월요일 오전 10시! 새로운 한 주가 시작됐어!"},
     "Wednesday": {15: "📢 수요일 오후 3시! 주중 절반 지났어! 힘내자!"},
@@ -37,7 +42,12 @@ async def send_notification():
         print(f"🚨 채널 ID {CHANNEL_ID}을 찾을 수 없음. 봇이 서버에 추가되었는지 확인하세요.")
         return
 
-    print("✅ 알림 봇 실행 중...")
+    # 🚀 **첫 실행 시 테스트 메시지 전송 (봇이 정상 작동하는지 확인)**
+    test_message = "✅ 디스코드 봇이 정상적으로 실행되었습니다! 알림이 정상적으로 전송될 예정입니다."
+    await channel.send(test_message)
+    print(f"✅ 테스트 메시지 전송: {test_message}")
+
+    print("✅ 알림 봇 실행 중... 하루 동안 지속 실행")
 
     while True:
         now = datetime.now()
@@ -50,20 +60,17 @@ async def send_notification():
             print(f"✅ 알림 전송: {message}")
 
         # 특정 요일 추가 알림
-        if weekday in EXTRA_SCHEDULES and now.hour in EXTRA_SCHEDULES[weekday]:
+        if weekday in EXTRA_SCHEDULES and now.hour in EXTRA_SCHEDULES[weekday] and now.minute == 0:
             message = f"{EXTRA_SCHEDULES[weekday][now.hour]}\n🕒 현재 시각: {now.strftime('%H:%M')}"
             await channel.send(message)
             print(f"✅ 요일별 알림 전송: {message}")
 
-        await asyncio.sleep(60)  # 중복 방지 (1분 대기)
+        await asyncio.sleep(60)  # 1분 대기 후 다시 확인
 
 @client.event
 async def on_ready():
     print(f"✅ 봇 로그인 완료: {client.user}")
     client.loop.create_task(send_notification())
 
-# GitHub Actions 환경에서는 백그라운드 실행이 필요 없으므로 기본 실행 방식 수정
 if __name__ == "__main__":
-    import nest_asyncio
-    nest_asyncio.apply()  # GitHub Actions 실행 환경에서도 정상 동작하도록 설정
     client.run(TOKEN)
